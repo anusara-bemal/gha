@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get user from session if logged in, but don't require it
     const session = await getServerSession(authOptions);
-    const userId = session?.user?.id ? parseInt(session.user.id as string, 10) : null;
+    const userId = session?.user?.id || null;
     
     // Parse request body
     const body = await request.json();
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get user ID and role from session
-    const userId = parseInt(session.user.id as string, 10); // Ensure userId is an integer
+    const userId = session.user.id; // Keep userId as a string
     const isAdmin = session.user.role === 'admin';
     
     // Construct query to get orders
