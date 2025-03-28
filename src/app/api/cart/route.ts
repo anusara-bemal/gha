@@ -53,7 +53,7 @@ async function getOrCreateCart(userId?: string, skipCache: boolean = false) {
         LEFT JOIN cart_items ci ON c.id = ci.cartId
         LEFT JOIN products p ON ci.productId = p.id
         WHERE c.userId = ?
-        GROUP BY c.id`,
+        GROUP BY c.id, c.userId`,
         [cartUserId]
       );
       
@@ -166,34 +166,38 @@ export async function GET(request: Request) {
     // Get user ID from session
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
-    console.log("Finding cart for user:", userId);
+    console.log("[DEBUG] Cart GET - User ID:", userId);
     
     // Create or get cart
     const cartWithItems = await getOrCreateCart(userId);
+    console.log("[DEBUG] Cart GET - Retrieved cart:", JSON.stringify(cartWithItems, null, 2));
     
     // Ensure all items have valid IDs
     if (cartWithItems.items && Array.isArray(cartWithItems.items)) {
-      console.log("Cart items before processing:", cartWithItems.items);
+      console.log("[DEBUG] Cart GET - Items before processing:", JSON.stringify(cartWithItems.items, null, 2));
       
       // Fix any items with empty IDs by assigning temporary IDs
       cartWithItems.items = cartWithItems.items.map(item => {
         if (item && (!item.id || item.id === '')) {
-          // Generate a temporary ID based on productId
-          console.log("Found item with empty ID, productId:", item.product?.id);
+          console.log("[DEBUG] Cart GET - Found item with empty ID, productId:", item.product?.id);
           item.id = `temp_${item.product?.id}_${Date.now()}`;
         }
         return item;
       }).filter(item => {
         // Still filter out null items and those without products
-        return item && item.product && item.product.id;
+        const isValid = item && item.product && item.product.id;
+        if (!isValid) {
+          console.log("[DEBUG] Cart GET - Filtering out invalid item:", item);
+        }
+        return isValid;
       });
       
-      console.log("Cart items after processing:", cartWithItems.items.length);
+      console.log("[DEBUG] Cart GET - Items after processing:", JSON.stringify(cartWithItems.items, null, 2));
     }
     
     return NextResponse.json(cartWithItems);
   } catch (error) {
-    console.error("Error getting cart:", error);
+    console.error("[DEBUG] Cart GET - Error:", error);
     return NextResponse.json(
       { error: "Failed to get cart: " + (error instanceof Error ? error.message : "Unknown error") },
       { status: 500 }
