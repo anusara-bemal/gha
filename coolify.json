@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "services": {
+    "herba-shop": {
+      "type": "docker-compose",
+      "configurationFile": "docker-compose.yml"
+    }
+  },
+  "environments": {
+    "production": {
+      "services": {
+        "herba-shop": {
+          "environment": {
+            "DATABASE_HOST": "db",
+            "DATABASE_USER": "root",
+            "DATABASE_NAME": "herba_db",
+            "NODE_ENV": "production"
+          }
+        }
+      }
+    }
+  }
+} 
